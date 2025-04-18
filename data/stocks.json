@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Apple",
+    "rate": 0.91
+  },
+  {
+    "name": "Tesla",
+    "rate": 0.69
+  },
+  {
+    "name": "Microsoft",
+    "rate": 0.97
+  },
+  {
+    "name": "Google",
+    "rate": 0.65
+  },
+  {
+    "name": "Amazon",
+    "rate": 0.69
+  },
+  {
+    "name": "Meta",
+    "rate": 0.54
+  },
+  {
+    "name": "Nvidia",
+    "rate": 0.62
+  },
+  {
+    "name": "Samsung",
+    "rate": 0.32
+  },
+  {
+    "name": "Toyota",
+    "rate": -0.04
+  },
+  {
+    "name": "Netflix",
+    "rate": 0.58
+  },
+  {
+    "name": "Intel",
+    "rate": 0.11
+  },
+  {
+    "name": "AMD",
+    "rate": 0.49
+  },
+  {
+    "name": "Sony",
+    "rate": -0.17
+  },
+  {
+    "name": "Zoom",
+    "rate": 0.1
+  },
+  {
+    "name": "Spotify",
+    "rate": 0.66
+  }
+]

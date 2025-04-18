@@ -1,0 +1,64 @@
+[
+  {
+    "type": "reward",
+    "label": "+100 كوينز",
+    "effect": "coins",
+    "value": 100
+  },
+  {
+    "type": "reward",
+    "label": "+200 كوينز",
+    "effect": "coins",
+    "value": 200
+  },
+  {
+    "type": "reward",
+    "label": "+500 كوينز",
+    "effect": "coins",
+    "value": 500
+  },
+  {
+    "type": "reward",
+    "label": "+10,000 كوينز",
+    "effect": "coins",
+    "value": 10000
+  },
+  {
+    "type": "role",
+    "label": "رول VIP ساعتين",
+    "effect": "role",
+    "roleId": "1360274567729254492",
+    "duration": 2
+  },
+  {
+    "type": "penalty",
+    "label": "-100 كوينز",
+    "effect": "coins",
+    "value": -100
+  },
+  {
+    "type": "penalty",
+    "label": "منع روليت 1 ساعة",
+    "effect": "cooldown",
+    "duration": 60
+  },
+  {
+    "type": "penalty",
+    "label": "خصم 50% من رصيدك",
+    "effect": "halve"
+  },
+  {
+    "type": "penalty",
+    "label": "خصم 99% من رصيدك",
+    "effect": "percent",
+    "value": 99
+  },
+  {
+    "type": "penalty",
+    "label": "منع استخدام مهمة 3 ساعات",
+    "effect": "blockMission",
+    "duration": 180
+  }
+]
+
+  
