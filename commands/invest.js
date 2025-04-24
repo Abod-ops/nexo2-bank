@@ -28,7 +28,6 @@ module.exports = {
 
       currentRow.addComponents(button);
 
-      // Discord يسمح بـ 5 أزرار فقط بالصف الواحد
       if (currentRow.components.length === 5 || i === stocks.length - 1) {
         rows.push(currentRow);
         currentRow = new ActionRowBuilder();

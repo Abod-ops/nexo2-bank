@@ -11,7 +11,6 @@ module.exports = {
   async execute(message, args, client) {
     const missionsPath = path.join(__dirname, '../data/missions.json');
     const activePath = path.join(__dirname, '../data/activeMissions.json');
-    const blockedPath = path.join(__dirname, '../data/blockedMissions.json');
 
     const userID = message.author.id;
     const username = message.author.username;
@@ -20,28 +19,10 @@ module.exports = {
     const activeMissions = JSON.parse(fs.readFileSync(activePath));
     const isAdmin = message.member.permissions.has('Administrator');
 
-    // تحقق من الحظر المؤقت للمهمات
-    let blocked = {};
-    if (fs.existsSync(blockedPath)) {
-      blocked = JSON.parse(fs.readFileSync(blockedPath, 'utf8'));
-    }
-
-    if (blocked[userID]) {
-      const now = Date.now();
-      if (now < blocked[userID]) {
-        const remaining = Math.ceil((blocked[userID] - now) / 60000);
-        return message.reply(`🚫 لا يمكنك استخدام المهام الآن. انتظر ${remaining} دقيقة.`);
-      } else {
-        delete blocked[userID];
-        fs.writeFileSync(blockedPath, JSON.stringify(blocked, null, 2));
-      }
-    }
-
     if (activeMissions[userID] && !isAdmin) {
-      return message.reply('🚫 لديك مهمة نشطة بالفعل. يجب إنهاؤها أو الانتظار 15 دقيقة.');
+      return message.reply('🚫 لديك مهمة نشطة بالفعل. يجب إنهاؤها أولاً.');
     }
 
-    // اختيار مهمة عشوائية
     const mission = missions[Math.floor(Math.random() * missions.length)];
     const reward = Math.floor(Math.random() * 81) + 20;
 
@@ -54,7 +35,6 @@ module.exports = {
 
     fs.writeFileSync(activePath, JSON.stringify(activeMissions, null, 2));
 
-    // إعداد البطاقة
     const canvas = createCanvas(700, 550);
     const ctx = canvas.getContext('2d');
 

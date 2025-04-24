@@ -1,9 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { createCanvas, loadImage } = require('@napi-rs/canvas');
-const fetch = require('node-fetch');
-
-const cooldowns = new Map();
 
 module.exports = {
   name: "سرقة",
@@ -22,11 +19,6 @@ module.exports = {
 
     if (thief.id === victim.id && !member.permissions.has('Administrator')) {
       return message.channel.send("❌ ما تقدر تسرق نفسك (إلا لو عندك صلاحية Administrator).");
-    }
-
-    if (!member.permissions.has('Administrator') && cooldowns.has(thief.id)) {
-      const remaining = ((cooldowns.get(thief.id) - Date.now()) / 1000).toFixed(0);
-      return message.channel.send(`⏳ انتظر ${remaining} ثانية قبل ما تقدر تحاول سرقة من جديد.`);
     }
 
     if (!users[thief.id]) users[thief.id] = { balance: 0 };
@@ -91,8 +83,7 @@ module.exports = {
         const answer = parseInt(collected.first().content);
         if (answer === result) {
           const amount = Math.floor(Math.random() * 100) + 1;
-          
-          // ✅ تعديل هنا: السماح بالسحب من نفسك حتى لو الرصيد ما يكفي (اختبار)
+
           if (victim.id === thief.id || users[victim.id].balance >= amount) {
             users[victim.id].balance -= amount;
             users[thief.id].balance += amount;
@@ -103,18 +94,10 @@ module.exports = {
           }
         } else {
           message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
-          if (!member.permissions.has('Administrator')) {
-            cooldowns.set(thief.id, Date.now() + 5 * 60 * 1000);
-            setTimeout(() => cooldowns.delete(thief.id), 5 * 60 * 1000);
-          }
         }
       })
       .catch(() => {
         message.channel.send(`⌛ انتهى الوقت! تم إحباط محاولة السرقة.`);
-        if (!member.permissions.has('Administrator')) {
-          cooldowns.set(thief.id, Date.now() + 5 * 60 * 1000);
-          setTimeout(() => cooldowns.delete(thief.id), 5 * 60 * 1000);
-        }
       });
   }
 }
