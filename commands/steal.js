@@ -24,7 +24,7 @@ module.exports = {
     if (!users[thief.id]) users[thief.id] = { balance: 0 };
     if (!users[victim.id]) users[victim.id] = { balance: 0 };
 
-    // ✅ تعديل عملية الحساب
+    // ✅ توليد سؤال حسابي صحيح
     const num1 = Math.floor(Math.random() * 10) + 1;
     const num2 = Math.floor(Math.random() * 10) + 1;
     const operator = Math.random() > 0.5 ? '+' : '-';
@@ -36,10 +36,13 @@ module.exports = {
         result = num1 + num2;
         question = `${num1} + ${num2} = ?`;
     } else {
-        result = num1 >= num2 ? num1 - num2 : num2 - num1;
-        question = `${Math.max(num1, num2)} - ${Math.min(num1, num2)} = ?`;
+        const bigger = Math.max(num1, num2);
+        const smaller = Math.min(num1, num2);
+        result = bigger - smaller;
+        question = `${bigger} - ${smaller} = ?`;
     }
 
+    // 🎨 إعداد الصورة
     const width = 800;
     const height = 400;
     const canvas = createCanvas(width, height);
@@ -92,16 +95,20 @@ module.exports = {
       .then(collected => {
         const answer = parseInt(collected.first().content);
         if (answer === result) {
-          const amount = Math.floor(Math.random() * 100) + 1;
-
-          if (victim.id === thief.id || users[victim.id].balance >= amount) {
-            users[victim.id].balance -= amount;
-            users[thief.id].balance += amount;
-            fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-            message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
-          } else {
-            message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
+          // ✅ تحديد المبلغ بشكل ذكي
+          const maxSteal = Math.min(100, users[victim.id].balance);
+          
+          if (maxSteal <= 0) {
+              return message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
           }
+
+          const amount = Math.floor(Math.random() * maxSteal) + 1;
+
+          users[victim.id].balance -= amount;
+          users[thief.id].balance += amount;
+          fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+
+          message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
         } else {
           message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
         }
