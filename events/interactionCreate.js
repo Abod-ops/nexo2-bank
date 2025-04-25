@@ -2,8 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   StringSelectMenuBuilder
 } = require('discord.js');
 
@@ -15,9 +13,9 @@ module.exports = {
     const customId = interaction.customId;
     const userId = interaction.user.id;
 
-    // Helper functions
+    // 🛠️ Helper functions
     const readJSON = (filePath) => {
-      if (!fs.existsSync(filePath)) return {};
+      if (!fs.existsSync(filePath)) return Array.isArray(filePath) ? [] : {};
       return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     };
 
@@ -25,10 +23,17 @@ module.exports = {
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     };
 
+    const usersPath = path.join(__dirname, '../data/users.json');
+    const users = readJSON(usersPath);
+    if (!users[userId]) users[userId] = { coins: 0 };  // تأمين وجود بيانات المستخدم
+
     // ✅ فتح المتجر
     if (customId === 'open_shop_intro') {
-      const shopPath = path.join(__dirname, '../data/shop_items.json');
-      const shopItems = readJSON(shopPath);
+      const shopItems = readJSON(path.join(__dirname, '../data/shop_items.json'));
+
+      if (!Array.isArray(shopItems) || shopItems.length === 0) {
+        return interaction.reply({ content: '❌ لا يوجد عناصر في المتجر حالياً.', ephemeral: true });
+      }
 
       const options = shopItems.map((item, index) => ({
         label: item.name.slice(0, 50),
@@ -43,7 +48,7 @@ module.exports = {
           .addOptions(options.slice(0, 25))
       );
 
-      await interaction.reply({
+      return interaction.reply({
         content: `🎁 اختر العنصر الذي ترغب بشرائه من متجر NEXO2 BANK:`,
         components: [row],
         ephemeral: true
@@ -51,61 +56,58 @@ module.exports = {
     }
 
     // 🛍️ عند اختيار عنصر من المتجر
-    else if (interaction.isStringSelectMenu() && customId === 'shop_selector') {
+    if (interaction.isStringSelectMenu() && customId === 'shop_selector') {
       const index = parseInt(interaction.values[0].split('_')[1]);
       const shopItems = readJSON(path.join(__dirname, '../data/shop_items.json'));
-      const users = readJSON(path.join(__dirname, '../data/users.json'));
-
       const item = shopItems[index];
-      const user = users[userId] || { coins: 0 };
 
       if (!item) {
         return interaction.reply({ content: '❌ هذا العنصر غير موجود.', ephemeral: true });
       }
 
+      const user = users[userId];
       if (user.coins < item.price) {
         return interaction.reply({
-          content: `❌ لا تملك كوينز كافية. مطلوب: ${item.price} 💰، معك: ${user.coins} 💰`,
+          content: `❌ لا تملك كوينز كافية. السعر: ${item.price} 💰 | رصيدك: ${user.coins} 💰`,
           ephemeral: true
         });
       }
 
       user.coins -= item.price;
-      users[userId] = user;
-      writeJSON(path.join(__dirname, '../data/users.json'), users);
 
       if (item.type === 'role') {
         const member = await interaction.guild.members.fetch(userId);
         await member.roles.add(item.roleId);
+        writeJSON(usersPath, users);
         return interaction.reply({ content: `✅ تم منحك الرول: ${item.name}`, ephemeral: true });
       } else if (item.type === 'feature') {
+        writeJSON(usersPath, users);
         return interaction.reply({ content: `🎉 تم شراء الميزة: ${item.name}. سيتم تفعيلها قريبًا!`, ephemeral: true });
       }
     }
 
     // 🎰 الروليت
-    else if (customId.startsWith('start_roulette_')) {
+    if (customId.startsWith('start_roulette_')) {
       const initiatorId = customId.split('_')[2];
-      if (userId !== initiatorId) return interaction.reply({ content: '❌ هذا الزر ليس مخصص لك.', ephemeral: true });
+      if (userId !== initiatorId) {
+        return interaction.reply({ content: '❌ هذا الزر ليس مخصص لك.', ephemeral: true });
+      }
 
-      const users = readJSON(path.join(__dirname, '../data/users.json'));
       const items = readJSON(path.join(__dirname, '../data/roulette_items.json'));
-
-      const user = users[userId] || { coins: 0 };
+      const user = users[userId];
       const cost = 150;
 
       if (user.coins < cost) {
-        return interaction.reply({ content: `❌ لا تملك كوينز كافية. تحتاج ${cost - user.coins} 🪙`, ephemeral: true });
+        return interaction.reply({ content: `❌ تحتاج ${cost} 🪙 للدوران. رصيدك: ${user.coins} 🪙`, ephemeral: true });
       }
 
       const now = Date.now();
-      const lastSpin = user.lastSpin || 0;
       const cooldown = 10 * 60 * 1000;
       const isAdmin = interaction.member.permissions.has('Administrator');
 
-      if (!isAdmin && now - lastSpin < cooldown) {
-        const remaining = Math.ceil((cooldown - (now - lastSpin)) / 60000);
-        return interaction.reply({ content: `⏳ انتظر ${remaining} دقيقة قبل التجربة مرة أخرى.`, ephemeral: true });
+      if (!isAdmin && now - (user.lastSpin || 0) < cooldown) {
+        const remaining = Math.ceil((cooldown - (now - user.lastSpin)) / 60000);
+        return interaction.reply({ content: `⏳ انتظر ${remaining} دقيقة قبل المحاولة مرة أخرى.`, ephemeral: true });
       }
 
       user.coins -= cost;
@@ -116,9 +118,7 @@ module.exports = {
       const winnerIndex = items.findIndex(item => item.label === chosen.label);
       const imageBuffer = await drawRouletteWheel(items, winnerIndex);
 
-      await interaction.channel.send({
-        files: [{ attachment: imageBuffer, name: 'roulette-result.png' }]
-      });
+      await interaction.channel.send({ files: [{ attachment: imageBuffer, name: 'roulette-result.png' }] });
 
       let resultMessage = '';
       switch (chosen.effect) {
@@ -153,26 +153,24 @@ module.exports = {
           break;
       }
 
-      users[userId] = user;
-      writeJSON(path.join(__dirname, '../data/users.json'), users);
+      writeJSON(usersPath, users);
 
       await interaction.reply({ content: `🎰 النتيجة: **${chosen.label}**!`, ephemeral: false });
       if (resultMessage) await interaction.channel.send(resultMessage);
     }
 
     // 📈 الاستثمار
-    else if (customId.startsWith('invest_')) {
-      const stockName = customId.split('_')[1];
-      const users = readJSON(path.join(__dirname, '../data/users.json'));
+    if (customId.startsWith('invest_')) {
+      const stockName = customId.replace('invest_', '');
       const stocks = readJSON(path.join(__dirname, '../data/stocks.json'));
-
-      const user = users[userId] || { coins: 0 };
       const stock = stocks.find(s => s.name === stockName);
 
-      if (!stock) return interaction.reply({ content: '❌ الشركة غير موجودة.', ephemeral: true });
+      if (!stock) {
+        return interaction.reply({ content: '❌ الشركة غير موجودة.', ephemeral: true });
+      }
 
       await interaction.reply({
-        content: `💰 كم تريد أن تستثمر في سهم **${stock.name}**؟\n📈 النسبة الحالية: ${(stock.rate * 100).toFixed(1)}%\n✍️ اكتب المبلغ الذي تريد استثماره (مثلاً: \\500\\)`,
+        content: `💰 كم تريد أن تستثمر في سهم **${stock.name}**؟\n📈 النسبة الحالية: ${(stock.rate * 100).toFixed(1)}%\n✍️ اكتب المبلغ الذي تريد استثماره (مثال: \`500\`)`,
         ephemeral: true
       });
 
@@ -181,20 +179,27 @@ module.exports = {
 
       collector.on('collect', msg => {
         const amount = parseInt(msg.content);
-        if (isNaN(amount) || amount <= 0) return msg.reply('❌ يجب إدخال مبلغ صالح.');
-        if (user.coins < amount) return msg.reply('❌ لا تملك كوينز كافية.');
+
+        if (isNaN(amount) || amount <= 0) {
+          return msg.reply('❌ يجب إدخال مبلغ صحيح.');
+        }
+
+        if (users[userId].coins < amount) {
+          return msg.reply(`❌ رصيدك غير كافي. رصيدك: ${users[userId].coins} 🪙`);
+        }
 
         const profit = Math.floor(amount * stock.rate);
-        user.coins += profit - amount;
+        users[userId].coins = users[userId].coins - amount + amount + profit;
 
-        users[userId] = user;
-        writeJSON(path.join(__dirname, '../data/users.json'), users);
+        writeJSON(usersPath, users);
 
-        msg.reply(`✅ تم استثمار ${amount} كوين في **${stock.name}**\n📈 الربح: ${profit} كوين\n💼 الرصيد الجديد: ${user.coins}`);
+        msg.reply(`✅ استثمرت ${amount} 🪙 في **${stock.name}**.\n📈 ربحت: ${profit} 🪙\n💼 رصيدك الآن: ${users[userId].coins} 🪙`);
       });
 
       collector.on('end', collected => {
-        if (collected.size === 0) interaction.followUp({ content: '⌛ انتهى الوقت ولم يتم إدخال مبلغ.', ephemeral: true });
+        if (collected.size === 0) {
+          interaction.followUp({ content: '⌛ انتهى الوقت ولم يتم إدخال مبلغ.', ephemeral: true });
+        }
       });
     }
   }
