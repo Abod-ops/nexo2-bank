@@ -175,7 +175,7 @@ module.exports = {
       });
 
       const filter = m => m.author.id === userId;
-      const collector = interaction.channel.createMessageCollector({ filter, time: 15000, max: 1 });
+      const collector = interaction.channel.createMessageCollector({ filter, time: 5000, max: 1 });
 
       collector.on('collect', msg => {
         const amount = parseInt(msg.content);
