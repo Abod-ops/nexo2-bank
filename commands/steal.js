@@ -95,28 +95,28 @@ module.exports = {
       .then(collected => {
         const answer = parseInt(collected.first().content);
         if (answer === result) {
-            // ✅ تحديد المبلغ بشكل ذكي وآمن
-            const maxSteal = Math.min(100, users[victim.id].balance);
-
-            if (!maxSteal || maxSteal <= 0) {
-                return message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
-            }
-
-            const amount = maxSteal === 1 ? 1 : Math.floor(Math.random() * maxSteal) + 1;
-
-            if (amount > users[victim.id].balance) {
-                return message.channel.send(`⚠️ خطأ غير متوقع في تحديد المبلغ، حاول مرة ثانية.`);
-            }
-
-            users[victim.id].balance -= amount;
-            users[thief.id].balance += amount;
-
-            fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-
-            message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
-        } else {
-            message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
-        }
+          // إذا عنده أقل من 1 كوينز، ما تقدر تسرق
+          if (users[victim.id].balance <= 0) {
+              return message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
+          }
+      
+          // حدد أقصى مبلغ ممكن تسرقه (100 أو أقل حسب الرصيد)
+          const maxSteal = Math.min(100, users[victim.id].balance);
+      
+          // حدد مبلغ عشوائي بين 1 و maxSteal
+          const amount = Math.floor(Math.random() * maxSteal) + 1;
+      
+          // نفذ عملية السرقة
+          users[victim.id].balance -= amount;
+          users[thief.id].balance += amount;
+      
+          fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+      
+          message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
+      } else {
+          message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
+      }
+      
       })
       .catch(() => {
         message.channel.send(`⌛ انتهى الوقت! تم إحباط محاولة السرقة.`);
