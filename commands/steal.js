@@ -24,11 +24,21 @@ module.exports = {
     if (!users[thief.id]) users[thief.id] = { balance: 0 };
     if (!users[victim.id]) users[victim.id] = { balance: 0 };
 
+    // ✅ تعديل عملية الحساب
     const num1 = Math.floor(Math.random() * 10) + 1;
     const num2 = Math.floor(Math.random() * 10) + 1;
     const operator = Math.random() > 0.5 ? '+' : '-';
-    const result = operator === '+' ? num1 + num2 : num1 - num2;
-    const question = `${num1} ${operator} ${num2} = ?`;
+
+    let result;
+    let question;
+
+    if (operator === '+') {
+        result = num1 + num2;
+        question = `${num1} + ${num2} = ?`;
+    } else {
+        result = num1 >= num2 ? num1 - num2 : num2 - num1;
+        question = `${Math.max(num1, num2)} - ${Math.min(num1, num2)} = ?`;
+    }
 
     const width = 800;
     const height = 400;
