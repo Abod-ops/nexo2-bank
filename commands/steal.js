@@ -95,22 +95,27 @@ module.exports = {
       .then(collected => {
         const answer = parseInt(collected.first().content);
         if (answer === result) {
-          // ✅ تحديد المبلغ بشكل ذكي
-          const maxSteal = Math.min(100, users[victim.id].balance);
-          
-          if (maxSteal <= 0) {
-              return message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
-          }
+            // ✅ تحديد المبلغ بشكل ذكي وآمن
+            const maxSteal = Math.min(100, users[victim.id].balance);
 
-          const amount = Math.floor(Math.random() * maxSteal) + 1;
+            if (!maxSteal || maxSteal <= 0) {
+                return message.channel.send(`❌ ${victim.username} ما عنده كوينز كفاية!`);
+            }
 
-          users[victim.id].balance -= amount;
-          users[thief.id].balance += amount;
-          fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+            const amount = maxSteal === 1 ? 1 : Math.floor(Math.random() * maxSteal) + 1;
 
-          message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
+            if (amount > users[victim.id].balance) {
+                return message.channel.send(`⚠️ خطأ غير متوقع في تحديد المبلغ، حاول مرة ثانية.`);
+            }
+
+            users[victim.id].balance -= amount;
+            users[thief.id].balance += amount;
+
+            fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+
+            message.channel.send(`✅ تمت السرقة بنجاح! ${thief.username} سرق ${amount} كوينز من ${victim.username}`);
         } else {
-          message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
+            message.channel.send(`🚨 إجابة خاطئة! تم القبض عليك يا ${thief.username}.`);
         }
       })
       .catch(() => {
